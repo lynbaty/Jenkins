@@ -1,0 +1,83 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'node:20'
+        APP_NAME = 'be-qln'
+
+        DATABASE_HOST = 'postgres-container'
+        DATABASE_PORT = '5432'
+        DATABASE_USER = 'postgres'
+        DATABASE_PASS = credentials('db-password-credentials')
+        DATABASE_NAME = 'postgres'
+        MINIO_ENDPOINT= 'minio'
+        MINIO_PORT = '9000'
+        MINIO_ACCESS_KEY = credentials('minio-access-key')
+        MINIO_SECRET_KEY = credentials('minio-secret-key')
+        MINIO_BUCKET_PUBLIC = 'public-bucket'
+        MINIO_BUCKET_PRIVATE = 'private-bucket'
+        MINIO_USE_SSL = false
+        EMAIL_HOST = 'smtp.gmail.com'
+        EMAIL_PORT = '587'
+        EMAIL_USERNAME = credentials('email-username')
+        EMAIL_PASSWORD = credentials('email-password')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git credentialsId: 'c72c8202-704d-45af-ba13-847c6bff4e09', branch: 'main', url: 'https://github.com/rd-city/portal-backend.git'
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t $APP_NAME:$BUILD_NUMBER .'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh """
+                        docker stop $APP_NAME || true
+                        docker rm $APP_NAME || true
+                        docker run -d --name $APP_NAME -p 8000:3000 \\
+                            --network mynetwork \\
+                            -e DATABASE_HOST=$DATABASE_HOST \\
+                            -e DATABASE_PORT=$DATABASE_PORT \\
+                            -e DATABASE_USER=$DATABASE_USER \\
+                            -e DATABASE_PASS=$DATABASE_PASS \\
+                            -e DATABASE_NAME=$DATABASE_NAME \\
+                            -e MINIO_ENDPOINT=$MINIO_ENDPOINT \\
+                            -e MINIO_PORT=$MINIO_PORT \\
+                            -e MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY \\
+                            -e MINIO_SECRET_KEY=$MINIO_SECRET_KEY \\
+                            -e MINIO_BUCKET_PUBLIC=$MINIO_BUCKET_PUBLIC \\
+                            -e MINIO_BUCKET_PRIVATE=$MINIO_BUCKET_PRIVATE \\
+                            -e MINIO_USE_SSL=$MINIO_USE_SSL \\
+                            -e EMAIL_HOST=$EMAIL_HOST \\
+                            -e EMAIL_PORT=$EMAIL_PORT \\
+                            -e EMAIL_USERNAME=$EMAIL_USERNAME \\
+                            -e EMAIL_PASSWORD=$EMAIL_PASSWORD \\
+                            -e JWT_SECRET=secret \\
+                            -e EXPIRES_IN_ACCESS=24h \\
+                            -e EXPIRES_IN_REFRESH=36h \\
+                            $APP_NAME:$BUILD_NUMBER
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployment Successful!'
+        }
+        failure {
+            echo 'Deployment Failed!'
+        }
+    }
+}

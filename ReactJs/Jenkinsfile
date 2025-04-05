@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'nginx:alpine'
+        APP_NAME = 'fe-user-qln'
+
+        VITE_API_BASE_URL= 'http://49.156.54.9:8000'
+    }
+
+    stages {
+        stage('Cleanup Git') {
+            steps {
+                script {
+                    sh 'git remote prune origin || true'
+                    sh 'git gc --prune=now || true'
+                    sh 'git remote set-head origin -d || true'
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                git credentialsId: 'c72c8202-704d-45af-ba13-847c6bff4e09', branch: 'develop', url: 'https://github.com/rd-city/portal-user-fontend.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build --build-arg VITE_API_BASE_URL=$VITE_API_BASE_URL -t $APP_NAME:$BUILD_NUMBER .'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh """
+                        docker stop $APP_NAME || true
+                        docker rm $APP_NAME || true
+                        docker run -d --name $APP_NAME -p 8001:80 \\
+                            --network mynetwork \\
+                            -e VITE_API_BASE_URL=$VITE_API_BASE_URL \\
+                            $APP_NAME:$BUILD_NUMBER
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployment Successful!'
+        }
+        failure {
+            echo 'Deployment Failed!'
+        }
+    }
+}
