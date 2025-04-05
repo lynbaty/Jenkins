@@ -8,7 +8,7 @@ Configure public ports and inbound rules via Azure or AWS configuration portal.
 ### Example Ports
 | Port | Purpose         | Inbound ID | Protocol |
 |------|------------------|------------|----------|
-| 22   | SSH              | Admin IP       | TCP      |
+| 22   | SSH              | Admin IP       | SSH      |
 | 8000 | Backend (API)    | Public       | TCP      |
 | 8001 | Frontend (Web)   | Public       | TCP      |
 | 5432 | PostgreSQL       | Dev Ip       | TCP      |
