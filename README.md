@@ -6,15 +6,15 @@
 Configure public ports and inbound rules via Azure or AWS configuration portal.
 
 ### Example Ports
-| Port | Purpose         |
-|------|------------------|
-| 22   | SSH              |
-| 8000 | Backend (API)    |
-| 8001 | Frontend (Web)   |
-| 5432 | PostgreSQL       |
-| 9000 | MinIO API        |
-| 9001 | MinIO Console    |
-| 8080 | Jenkins          |
+| Port | Purpose         | Inbound ID | Protocol |
+|------|------------------|------------|----------|
+| 22   | SSH              | Admin IP       | TCP      |
+| 8000 | Backend (API)    | Public       | TCP      |
+| 8001 | Frontend (Web)   | Public       | TCP      |
+| 5432 | PostgreSQL       | Dev Ip       | TCP      |
+| 9000 | MinIO API        | Dev Ip       | TCP      |
+| 9001 | MinIO Console    | Dev Ip       | TCP      |
+| 8080 | Jenkins          | Admin IP       | TCP      |
 
 ---
 
